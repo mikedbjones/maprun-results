@@ -12,8 +12,12 @@ print(f'-------------------------\nStarting at {datetime.now().strftime("%d/%m/%
 danebridge = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Danebridge%20Race%201%20PZ%20PXAS%20ScoreV120.csv'
 winster = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Winster%20Race%202%20PZ%20PXAS%20ScoreV120.csv'
 hartington = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Hartington%20Alstonefield%20Race%203%20PZ%20PXAS%20ScoreV120.csv'
+wormhill = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Wormhill%20Race%204%20PZ%20PXAS%20ScoreV120.csv'
 
-events = {'Danebridge': danebridge, 'Winster': winster, 'Hartington': hartington}
+events = {'Danebridge': danebridge,
+          'Winster': winster,
+          'Hartington': hartington,
+          'Wormhill': wormhill}
 to_concat = []
 
 for event in events:
@@ -22,7 +26,7 @@ for event in events:
     print(f'Downloaded {event}')
     df['Event'] = event
     df['Age Category'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
-    df['Points'] = df['Points'].str.replace(r'\s.+', '', regex=True).astype(int)
+    df['Points'] = df['Points'].astype(str).str.replace(r'\s.+', '', regex=True).astype(int)
     df['Time'] = pd.to_timedelta(df['Time'])
     df = df.sort_values(['Name', 'Age Category', 'Event', 'Points'], ascending=False)
     df = df.drop_duplicates(subset=['Name', 'Age Category', 'Event'], keep='first')
@@ -32,11 +36,15 @@ for event in events:
 df_danebridge = to_concat[0]
 df_winster = to_concat[1]
 df_hartington = to_concat[2]
+df_wormhill = to_concat[3]
 
 # MERGE RESULTS
 
-df = df_danebridge.merge(df_winster, how='outer', on=['Name', 'Age Category'])
-df = df.merge(df_hartington, how='outer', on=['Name', 'Age Category'])
+l = len(to_concat)
+df = to_concat[0]
+
+for i in range(l-1):
+    df = df.merge(to_concat[i+1], how='outer', on=['Name', 'Age Category'], suffixes=(f'_{i}', f'_{i+1}'))
 
 points_cols = [x for x in df.columns if 'Points' in x]
 time_cols = [x for x in df.columns if 'Time' in x]
@@ -55,8 +63,11 @@ df[points_cols] = df[points_cols].apply(lambda x: x.astype(str).replace(r'\..+',
 time_cols = [x for x in df.columns if 'Time' in x]
 df[time_cols] = df[time_cols].apply(lambda x: x.astype(str).replace(r'.+\s', '', regex=True).str.lower().str.replace('nat', '', case=False))
 
-df.columns = ['Name', 'Age Category', 'Event', 'Points', 'Time', 'Event', 'Points', 'Time', 'Event', 'Points', 'Time',
-              'Total Points', 'Total Time']
+begin = ['Name', 'Age Category']
+middle = ['Event', 'Points', 'Time']
+end = ['Total Points', 'Total Time']
+
+df.columns = begin + len(to_concat)*middle + end
 
 # ADD BOTTOM ROW WITH UPDATED DATE AND TIME
 
