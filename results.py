@@ -54,6 +54,42 @@ df['Total Time'] = df[time_cols].fillna(pd.Timedelta(seconds=0)).sum(axis=1)
 
 df = df.sort_values(['Total Points', 'Total Time'], ascending=[False, True])
 
+# ADD POSITION RANKS
+
+def points_time_tuple(row):
+
+    """
+    Args:
+        row (pd.Series): row of dataframe including columns 'Total Points' and 'Total Time'
+    Returns:
+        t (tuple): (Total points, -Total time)
+    """
+
+    t = (row['Total Points'], -row['Total Time'])
+    return t
+
+def points_time_rank(df):
+
+    """
+    Args:
+        df (pd.DataFrame): Dataframe including columns 'Total Points' and 'Total Time'
+    Returns:
+        ranks (pd.Series): Ranked using 'min' method (eg 1, 2, 2, 4, 5, 5, 7) on points (desc) then time (asc)
+    """
+    ranks = df[['Total Points', 'Total Time']].apply(points_time_tuple, axis=1).rank(method='min', ascending=False).astype(int).astype(str)
+    return ranks
+
+df['Pos'] = points_time_rank(df)
+df['Age/Cat Pos'] = df.groupby('Age Category').apply(points_time_rank).reset_index(level=0)[0]
+
+# REORDER COLUMNS
+
+cols = df.columns.tolist()
+cols = cols[-2:] + cols[:-2]
+df = df[cols]
+
+# SET COLUMN DTYPES AND NAMES FOR EXPORT
+
 events_cols = [x for x in df.columns if 'Event' in x]
 df[events_cols] = df[events_cols].apply(lambda x: x.astype(str).str.replace('NaN', '', case=False))
 
@@ -63,7 +99,7 @@ df[points_cols] = df[points_cols].apply(lambda x: x.astype(str).replace(r'\..+',
 time_cols = [x for x in df.columns if 'Time' in x]
 df[time_cols] = df[time_cols].apply(lambda x: x.astype(str).replace(r'.+\s', '', regex=True).str.lower().str.replace('nat', '', case=False))
 
-begin = ['Name', 'Age Category']
+begin = ['Pos', 'Age/Cat Pos', 'Name', 'Age Category']
 middle = ['Event', 'Points', 'Time']
 end = ['Total Points', 'Total Time']
 
