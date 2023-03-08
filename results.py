@@ -117,7 +117,22 @@ csv_file = 'peak_raid_maprun_2022_results.csv'
 html_file = 'peak_raid_maprun_2022_results.html'
 
 df.to_csv(csv_file, index=False)
-df.to_html(html_file, justify='left', index=False, na_rep='')
+
+pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
+
+html_string = '''
+<html>
+  <head><title>Peak Raid MapRun 2022 Results</title></head>
+  <link rel="stylesheet" type="text/css" href="df_style.css"/>
+  <body>
+    {table}
+  </body>
+</html>.
+'''
+
+# OUTPUT AN HTML FILE
+with open(html_file, 'w') as f:
+    f.write(html_string.format(table=df.to_html(justify='left', index=False, na_rep='', classes='mystyle')))
 
 print('Exported CSV and HTML files')
 
