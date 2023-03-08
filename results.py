@@ -113,8 +113,8 @@ print('Merged results')
 
 # EXPORT CSV AND HTML FILES
 
-csv_file = 'peak_raid_maprun_2022_results.csv'
-html_file = 'peak_raid_maprun_2022_results.html'
+csv_file = '2022.csv'
+html_file = '2022.html'
 
 df.to_csv(csv_file, index=False)
 
