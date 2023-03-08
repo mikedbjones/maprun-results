@@ -145,7 +145,7 @@ PASSWORD = os.environ.get('Q_DATA_PASSWORD')
 ftp = FTP_TLS(IP)
 ftp.login(USERNAME, PASSWORD)
 ftp.prot_p()
-ftp.cwd('/public_html/')
+ftp.cwd('/public_html/peakraid/')
 
 for f in [csv_file, html_file]:
     file = open(f,'rb')
