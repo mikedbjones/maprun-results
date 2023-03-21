@@ -136,7 +136,7 @@ with open(html_file, 'w') as f:
 
 print('Exported CSV and HTML files')
 
-# UPLOAD TO qdata.uk
+# UPLOAD TO http://qdata.byethost4.com/
 
 IP = os.environ.get('Q_DATA_IP')
 USERNAME = os.environ.get('Q_DATA_USERNAME')
@@ -145,7 +145,7 @@ PASSWORD = os.environ.get('Q_DATA_PASSWORD')
 ftp = FTP_TLS(IP)
 ftp.login(USERNAME, PASSWORD)
 ftp.prot_p()
-ftp.cwd('/public_html/peakraid/')
+ftp.cwd('/htdocs/peakraid/')
 
 for f in [csv_file, html_file]:
     file = open(f,'rb')
@@ -154,4 +154,4 @@ for f in [csv_file, html_file]:
 
 ftp.quit()
 
-print(f'Uploaded files to qdata.uk at {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n-------------------------')
+print(f'Uploaded files to http://qdata.byethost4.com/ at {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n-------------------------')
