@@ -3,7 +3,7 @@ import pandas as pd
 import io
 import os
 from datetime import datetime
-from ftplib import FTP_TLS
+from ftplib import FTP_TLS, FTP
 
 # DOWNLOAD LATEST RESULTS
 
@@ -142,9 +142,10 @@ IP = os.environ.get('Q_DATA_IP')
 USERNAME = os.environ.get('Q_DATA_USERNAME')
 PASSWORD = os.environ.get('Q_DATA_PASSWORD')
 
-ftp = FTP_TLS(IP)
+#ftp = FTP_TLS(IP)
+ftp = FTP(IP)
 ftp.login(USERNAME, PASSWORD)
-ftp.prot_p()
+#ftp.prot_p() not needed unless using FTP_TLS
 ftp.cwd('/htdocs/peakraid/')
 
 for f in [csv_file, html_file]:
