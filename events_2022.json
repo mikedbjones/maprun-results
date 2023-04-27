@@ -1,0 +1,6 @@
+{
+    "Danebridge": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Danebridge%20Race%201%20PZ%20PXAS%20ScoreV120.csv",
+    "Winster": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Winster%20Race%202%20PZ%20PXAS%20ScoreV120.csv",
+    "Hartington": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Hartington%20Alstonefield%20Race%203%20PZ%20PXAS%20ScoreV120.csv",
+    "Wormhill": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Wormhill%20Race%204%20PZ%20PXAS%20ScoreV120.csv"
+}

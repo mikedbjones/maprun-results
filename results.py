@@ -4,20 +4,23 @@ import io
 import os
 from datetime import datetime
 from ftplib import FTP_TLS, FTP
+from argparse import ArgumentParser
+import json
+
+parser = ArgumentParser()
+parser.add_argument('--year', required=True, help='events year eg 2023')
+parser.add_argument('--events', required=True, help='events filename eg events_2023.json')
+args = parser.parse_args()
+args_dict = vars(args)
 
 # DOWNLOAD LATEST RESULTS
 
 print(f'-------------------------\nStarting at {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}')
 
-danebridge = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Danebridge%20Race%201%20PZ%20PXAS%20ScoreV120.csv'
-winster = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Winster%20Race%202%20PZ%20PXAS%20ScoreV120.csv'
-hartington = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Hartington%20Alstonefield%20Race%203%20PZ%20PXAS%20ScoreV120.csv'
-wormhill = 'https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Wormhill%20Race%204%20PZ%20PXAS%20ScoreV120.csv'
+year = args_dict['year']
+with open(args_dict['events'], 'r') as f:
+    events = json.load(f)
 
-events = {'Danebridge': danebridge,
-          'Winster': winster,
-          'Hartington': hartington,
-          'Wormhill': wormhill}
 to_concat = []
 
 for event in events:
@@ -32,11 +35,6 @@ for event in events:
     df = df.drop_duplicates(subset=['Name', 'Age Category', 'Event'], keep='first')
     df = df[['Name', 'Age Category', 'Event', 'Points', 'Time']]
     to_concat.append(df)
-
-df_danebridge = to_concat[0]
-df_winster = to_concat[1]
-df_hartington = to_concat[2]
-df_wormhill = to_concat[3]
 
 # MERGE RESULTS
 
@@ -113,19 +111,19 @@ print('Merged results')
 
 # EXPORT CSV AND HTML FILES
 
-csv_file = '2022.csv'
-html_file = '2022.html'
+csv_file = f'{year}.csv'
+html_file = f'{year}.html'
 
 df.to_csv(csv_file, index=False)
 
 pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
-html_string = '''
+html_string = f'''
 <html>
-  <head><title>Peak Raid MapRun 2022 Results</title></head>
+  <head><title>Peak Raid MapRun {year} Results</title></head>
   <link rel="stylesheet" type="text/css" href="df_style.css"/>
   <body>
-    {table}
+    {{table}}
   </body>
 </html>.
 '''
