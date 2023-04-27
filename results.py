@@ -9,7 +9,6 @@ import json
 
 parser = ArgumentParser()
 parser.add_argument('--year', required=True, help='events year eg 2023')
-parser.add_argument('--events', required=True, help='events filename eg events_2023.json')
 args = parser.parse_args()
 args_dict = vars(args)
 
@@ -18,7 +17,8 @@ args_dict = vars(args)
 print(f'-------------------------\nStarting at {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}')
 
 year = args_dict['year']
-with open(args_dict['events'], 'r') as f:
+events_filename = f'events_{year}.json'
+with open(events_filename, 'r') as f:
     events = json.load(f)
 
 to_concat = []
