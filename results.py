@@ -23,6 +23,20 @@ with open(events_filename, 'r') as f:
 
 to_concat = []
 
+def convert_timedelta_format(timedelta):
+    parts = timedelta.split(':')
+    if len(parts) == 3:
+        # Format is hh:mm:ss
+        converted_timedelta = timedelta
+    elif len(parts) == 2:
+        # Format is mm:ss
+        converted_timedelta = ('0:' + timedelta)
+    else:
+        # Handle invalid format or empty string
+        raise ValueError('time not of format hh:mm:ss or mm:ss')
+
+    return converted_timedelta
+
 for event in events:
     data = requests.get(url=events[event]).content
     df = pd.read_html(io.StringIO(data.decode('utf-8')))[0]
@@ -30,6 +44,7 @@ for event in events:
     df['Event'] = event
     df['Age Category'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
     df['Points'] = df['Points'].astype(str).str.replace(r'\s.+', '', regex=True).astype(int)
+    df['Time'] = df['Time'].apply(convert_timedelta_format) # handle instances where time is mm:ss instead of hh:mm:ss
     df['Time'] = pd.to_timedelta(df['Time'])
     df = df.sort_values(['Name', 'Age Category', 'Event', 'Points'], ascending=False)
     df = df.drop_duplicates(subset=['Name', 'Age Category', 'Event'], keep='first')
