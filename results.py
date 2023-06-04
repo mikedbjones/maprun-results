@@ -2,7 +2,8 @@ import requests
 import pandas as pd
 import io
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+import pytz
 from ftplib import FTP_TLS, FTP
 from argparse import ArgumentParser
 import json
@@ -14,7 +15,15 @@ args_dict = vars(args)
 
 # DOWNLOAD LATEST RESULTS
 
-print(f'-------------------------\nStarting at {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}')
+def get_uk_time_now():
+    # Get the current datetime in UTC
+    utc_now = datetime.now(timezone.utc)
+    # Convert to the UK timezone
+    uk_tz = pytz.timezone('Europe/London')
+    uk_now = utc_now.astimezone(uk_tz)
+    return uk_now
+
+print(f'-------------------------\nStarting at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}')
 
 year = args_dict['year']
 events_filename = f'events_{year}.json'
@@ -121,7 +130,7 @@ df.columns = begin + len(to_concat)*middle + end
 
 # ADD BOTTOM ROW WITH UPDATED DATE AND TIME
 
-df.loc[df.shape[0], 'Name'] = f'Latest update at: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}'
+df.loc[df.shape[0], 'Name'] = f'Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}'
 
 print('Merged results')
 
@@ -169,4 +178,4 @@ for f in [csv_file, html_file]:
 
 ftp.quit()
 
-print(f'Uploaded files to http://qdata.byethost4.com/ at {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n-------------------------')
+print(f'Uploaded files to http://qdata.byethost4.com/ at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}\n-------------------------')
