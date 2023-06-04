@@ -40,6 +40,7 @@ def convert_timedelta_format(timedelta):
 for event in events:
     data = requests.get(url=events[event]).content
     df = pd.read_html(io.StringIO(data.decode('utf-8')))[0]
+    df = df.dropna(subset=['Time', 'Points'])
     print(f'Downloaded {event}')
     df['Event'] = event
     df['Age Category'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
