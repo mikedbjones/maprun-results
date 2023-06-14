@@ -151,7 +151,7 @@ def download_process_results(events_info):
 
     print('Exported CSV and HTML files')
 
-    # UPLOAD TO http://qdata.byethost4.com/
+    # UPLOAD
 
     try:
         UPLOAD_ADDRESS = os.environ['UPLOAD_ADDRESS']
