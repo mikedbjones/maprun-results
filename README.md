@@ -1,6 +1,6 @@
 # maprun-results
 
-This project automatically downloads separate results from multiple [Maprun events](https://maprunners.weebly.com/), then combines points and time scores for each competitor. It then ranks competitors by overall number of points and time taken. The combined results in CSV and HTML format are stored locally, and optionally uploaded to a website.
+This project automatically downloads separate results from multiple [Maprun events](https://maprunners.weebly.com/), then combines points and time scores for each competitor. It then ranks competitors by overall number of points and time taken. The combined results in CSV and HTML format are stored locally, and optionally uploaded to a website. If you run, or take part in, a Maprun series of events such as the [Peak Raid Series](https://explorerevents.co.uk/), this tool can be useful in creating and viewing combined series results.
 
 ## Usage
 ### Local
