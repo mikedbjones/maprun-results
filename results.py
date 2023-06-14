@@ -4,16 +4,8 @@ import io
 import os
 from datetime import datetime, timezone
 import pytz
-from ftplib import FTP_TLS, FTP
-from argparse import ArgumentParser
+from ftplib import FTP
 import json
-
-parser = ArgumentParser()
-parser.add_argument('--year', required=True, help='events year eg 2023')
-args = parser.parse_args()
-args_dict = vars(args)
-
-# DOWNLOAD LATEST RESULTS
 
 def get_uk_time_now():
     # Get the current datetime in UTC
@@ -22,15 +14,6 @@ def get_uk_time_now():
     uk_tz = pytz.timezone('Europe/London')
     uk_now = utc_now.astimezone(uk_tz)
     return uk_now
-
-print(f'-------------------------\nStarting at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}')
-
-year = args_dict['year']
-events_filename = f'events_{year}.json'
-with open(events_filename, 'r') as f:
-    events = json.load(f)
-
-to_concat = []
 
 def convert_timedelta_format(timedelta):
     parts = timedelta.split(':')
@@ -45,39 +28,6 @@ def convert_timedelta_format(timedelta):
         raise ValueError('time not of format hh:mm:ss or mm:ss')
 
     return converted_timedelta
-
-for event in events:
-    data = requests.get(url=events[event]).content
-    df = pd.read_html(io.StringIO(data.decode('utf-8')))[0]
-    df = df.dropna(subset=['Time', 'Points'])
-    print(f'Downloaded {event}')
-    df['Event'] = event
-    df['Age Category'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
-    df['Points'] = df['Points'].astype(str).str.replace(r'\s.+', '', regex=True).astype(int)
-    df['Time'] = df['Time'].apply(convert_timedelta_format) # handle instances where time is mm:ss instead of hh:mm:ss
-    df['Time'] = pd.to_timedelta(df['Time'])
-    df = df.sort_values(['Name', 'Age Category', 'Event', 'Points'], ascending=False)
-    df = df.drop_duplicates(subset=['Name', 'Age Category', 'Event'], keep='first')
-    df = df[['Name', 'Age Category', 'Event', 'Points', 'Time']]
-    to_concat.append(df)
-
-# MERGE RESULTS
-
-l = len(to_concat)
-df = to_concat[0]
-
-for i in range(l-1):
-    df = df.merge(to_concat[i+1], how='outer', on=['Name', 'Age Category'], suffixes=(f'_{i}', f'_{i+1}'))
-
-points_cols = [x for x in df.columns if 'Points' in x]
-time_cols = [x for x in df.columns if 'Time' in x]
-
-df['Total Points'] = df[points_cols].fillna(0).sum(axis=1)
-df['Total Time'] = df[time_cols].fillna(pd.Timedelta(seconds=0)).sum(axis=1)
-
-df = df.sort_values(['Total Points', 'Total Time'], ascending=[False, True])
-
-# ADD POSITION RANKS
 
 def points_time_tuple(row):
 
@@ -102,80 +52,144 @@ def points_time_rank(df):
     ranks = df[['Total Points', 'Total Time']].apply(points_time_tuple, axis=1).rank(method='min', ascending=False).astype(int).astype(str)
     return ranks
 
-df['Pos'] = points_time_rank(df)
-df['Age/Cat Pos'] = df.groupby('Age Category').apply(points_time_rank).reset_index(level=0)[0]
+def download_process_results(events_info):
 
-# REORDER COLUMNS
+    events_file = events_info['file']
+    events_html_name = events_info['html_name']
+    events_html_title = events_info['html_title']
 
-cols = df.columns.tolist()
-cols = cols[-2:] + cols[:-2]
-df = df[cols]
+    # DOWNLOAD LATEST RESULTS
+    print(f'-------------------------\nStarting at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}')
+    with open(events_file, 'r') as f:
+        events = json.load(f)
 
-# SET COLUMN DTYPES AND NAMES FOR EXPORT
+    to_concat = []
 
-events_cols = [x for x in df.columns if 'Event' in x]
-df[events_cols] = df[events_cols].apply(lambda x: x.astype(str).str.replace('NaN', '', case=False))
+    for event in events:
+        data = requests.get(url=events[event]).content
+        df = pd.read_html(io.StringIO(data.decode('utf-8')))[0]
+        df = df.dropna(subset=['Time', 'Points'])
+        print(f'Downloaded {event}')
+        df['Event'] = event
+        df['Age Category'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
+        df['Points'] = df['Points'].astype(str).str.replace(r'\s.+', '', regex=True).astype(int)
+        df['Time'] = df['Time'].apply(convert_timedelta_format) # handle instances where time is mm:ss instead of hh:mm:ss
+        df['Time'] = pd.to_timedelta(df['Time'])
+        df = df.sort_values(['Name', 'Age Category', 'Event', 'Points'], ascending=False)
+        df = df.drop_duplicates(subset=['Name', 'Age Category', 'Event'], keep='first')
+        df = df[['Name', 'Age Category', 'Event', 'Points', 'Time']]
+        to_concat.append(df)
 
-points_cols = [x for x in df.columns if 'Points' in x]
-df[points_cols] = df[points_cols].apply(lambda x: x.astype(str).replace(r'\..+', '', regex=True).str.lower().str.replace('nan', '', case=False))
+    # MERGE RESULTS
 
-time_cols = [x for x in df.columns if 'Time' in x]
-df[time_cols] = df[time_cols].apply(lambda x: x.astype(str).replace(r'.+\s', '', regex=True).str.lower().str.replace('nat', '', case=False))
+    l = len(to_concat)
+    df = to_concat[0]
 
-begin = ['Pos', 'Age/Cat Pos', 'Name', 'Age Category']
-middle = ['Event', 'Points', 'Time']
-end = ['Total Points', 'Total Time']
+    for i in range(l-1):
+        df = df.merge(to_concat[i+1], how='outer', on=['Name', 'Age Category'], suffixes=(f'_{i}', f'_{i+1}'))
 
-df.columns = begin + len(to_concat)*middle + end
+    points_cols = [x for x in df.columns if 'Points' in x]
+    time_cols = [x for x in df.columns if 'Time' in x]
 
-# ADD BOTTOM ROW WITH UPDATED DATE AND TIME
+    df['Total Points'] = df[points_cols].fillna(0).sum(axis=1)
+    df['Total Time'] = df[time_cols].fillna(pd.Timedelta(seconds=0)).sum(axis=1)
 
-df.loc[df.shape[0], 'Name'] = f'Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}'
+    df = df.sort_values(['Total Points', 'Total Time'], ascending=[False, True])
 
-print('Merged results')
+    # ADD POSITION RANKS
+    df['Pos'] = points_time_rank(df)
+    df['Age/Cat Pos'] = df.groupby('Age Category').apply(points_time_rank).reset_index(level=0)[0]
 
-# EXPORT CSV AND HTML FILES
+    # REORDER COLUMNS
+    cols = df.columns.tolist()
+    cols = cols[-2:] + cols[:-2]
+    df = df[cols]
 
-csv_file = f'{year}.csv'
-html_file = f'{year}.html'
+    # SET COLUMN DTYPES AND NAMES FOR EXPORT
+    events_cols = [x for x in df.columns if 'Event' in x]
+    df[events_cols] = df[events_cols].apply(lambda x: x.astype(str).str.replace('NaN', '', case=False))
+    points_cols = [x for x in df.columns if 'Points' in x]
+    df[points_cols] = df[points_cols].apply(lambda x: x.astype(str).replace(r'\..+', '', regex=True).str.lower().str.replace('nan', '', case=False))
+    time_cols = [x for x in df.columns if 'Time' in x]
+    df[time_cols] = df[time_cols].apply(lambda x: x.astype(str).replace(r'.+\s', '', regex=True).str.lower().str.replace('nat', '', case=False))
+    begin = ['Pos', 'Age/Cat Pos', 'Name', 'Age Category']
+    middle = ['Event', 'Points', 'Time']
+    end = ['Total Points', 'Total Time']
+    df.columns = begin + len(to_concat)*middle + end
 
-df.to_csv(csv_file, index=False)
+    # ADD BOTTOM ROW WITH UPDATED DATE AND TIME
+    df.loc[df.shape[0], 'Name'] = f'Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}'
+    print('Merged results')
 
-pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
+    # EXPORT CSV AND HTML FILES
+    curr_dir = os.path.dirname(__file__)
+    tmp_dir = '/tmp/'
+    tmp_path = os.path.join(curr_dir, tmp_dir)
+    csv_name = f'{events_html_name}.csv'
+    html_name = f'{events_html_name}.html'
+    
+    csv_file = f'{tmp_path}{csv_name}'
+    html_file = f'{tmp_path}{html_name}'
 
-html_string = f'''
-<html>
-  <head><title>Peak Raid MapRun {year} Results</title></head>
-  <link rel="stylesheet" type="text/css" href="df_style.css"/>
-  <body>
-    {{table}}
-  </body>
-</html>.
-'''
+    df.to_csv(csv_file, index=False)
 
-# OUTPUT AN HTML FILE
-with open(html_file, 'w') as f:
-    f.write(html_string.format(table=df.to_html(justify='left', index=False, na_rep='', classes='mystyle')))
+    pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
-print('Exported CSV and HTML files')
+    html_string = f'''
+    <html>
+    <head><title>{events_html_title}</title></head>
+    <link rel="stylesheet" type="text/css" href="df_style.css"/>
+    <body>
+        {{table}}
+    </body>
+    </html>.
+    '''
 
-# UPLOAD TO http://qdata.byethost4.com/
+    # OUTPUT AN HTML FILE
+    with open(html_file, 'w') as f:
+        f.write(html_string.format(table=df.to_html(justify='left', index=False, na_rep='', classes='mystyle')))
 
-IP = os.environ.get('Q_DATA_IP')
-USERNAME = os.environ.get('Q_DATA_USERNAME')
-PASSWORD = os.environ.get('Q_DATA_PASSWORD')
+    print('Exported CSV and HTML files')
 
-#ftp = FTP_TLS(IP)
-ftp = FTP(IP)
-ftp.login(USERNAME, PASSWORD)
-#ftp.prot_p() not needed unless using FTP_TLS
-ftp.cwd('/htdocs/peakraid/')
+    # UPLOAD TO http://qdata.byethost4.com/
 
-for f in [csv_file, html_file]:
-    file = open(f,'rb')
-    ftp.storbinary('STOR '+f, file)
-    file.close()
+    try:
+        UPLOAD_ADDRESS = os.environ['UPLOAD_ADDRESS']
+        UPLOAD_DIRECTORY = os.environ['UPLOAD_DIRECTORY']
+        UPLOAD_USERNAME = os.environ['UPLOAD_USERNAME']
+        UPLOAD_PASSWORD = os.environ['UPLOAD_PASSWORD']
 
-ftp.quit()
+        ftp = FTP(UPLOAD_ADDRESS)
+        ftp.login(UPLOAD_USERNAME, UPLOAD_PASSWORD)
+        ftp.cwd(UPLOAD_DIRECTORY)
 
-print(f'Uploaded files to http://qdata.byethost4.com/ at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}\n-------------------------')
+        for f in [csv_name, html_name]:
+            file = open(f'{tmp_path}{f}','rb')
+            ftp.storbinary('STOR '+f, file)
+            file.close()
+
+        ftp.quit()
+
+        print(f'Uploaded files to {UPLOAD_ADDRESS} at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}\n-------------------------')
+
+    except KeyError:
+        print('Upload details not configured; skipping upload\n-------------------------')
+
+
+def lambda_handler(event, context):
+
+    download_process_results(event)
+
+    return {
+        'statusCode': 200,
+        'body': 'Maprun results run successfully'
+    }
+
+if __name__ == "__main__":
+
+    with open('events_info.json', 'r') as f:
+        events_info_json = f.read()
+
+    events_info_dict = json.loads(events_info_json)
+    
+    lambda_handler(event=events_info_dict, context=None)

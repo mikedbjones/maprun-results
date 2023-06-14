@@ -2,3 +2,6 @@
 *.log
 *.csv
 *.html
+__pycache__*
+app-env
+docker_build.sh
