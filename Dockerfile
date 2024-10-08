@@ -1,7 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.9
 
-COPY df_style.css ./
-COPY peak_raid_2023.json ./
+COPY peak_raid_2024.json ./
 COPY requirements.txt ./
 COPY results.py ./
 

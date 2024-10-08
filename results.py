@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import pytz
 from ftplib import FTP
 import json
+import base64
 
 def get_uk_time_now():
     # Get the current datetime in UTC
@@ -57,6 +58,7 @@ def download_process_results(events_info):
     events_file = events_info['file']
     events_html_name = events_info['html_name']
     events_html_title = events_info['html_title']
+    events_upload_type = events_info['upload_type']
 
     # DOWNLOAD LATEST RESULTS
     print(f'-------------------------\nStarting at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}')
@@ -71,13 +73,13 @@ def download_process_results(events_info):
         df = df.dropna(subset=['Time', 'Points'])
         print(f'Downloaded {event}')
         df['Event'] = event
-        df['Age Category'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
+        df['Age Cat'] = df['AgeCat Position'].str.replace(r'\:.+', '', regex=True)
         df['Points'] = df['Points'].astype(str).str.replace(r'\s.+', '', regex=True).astype(int)
         df['Time'] = df['Time'].apply(convert_timedelta_format) # handle instances where time is mm:ss instead of hh:mm:ss
         df['Time'] = pd.to_timedelta(df['Time'])
-        df = df.sort_values(['Name', 'Age Category', 'Event', 'Points'], ascending=False)
-        df = df.drop_duplicates(subset=['Name', 'Age Category', 'Event'], keep='first')
-        df = df[['Name', 'Age Category', 'Event', 'Points', 'Time']]
+        df = df.sort_values(['Name', 'Age Cat', 'Event', 'Points'], ascending=False)
+        df = df.drop_duplicates(subset=['Name', 'Age Cat', 'Event'], keep='first')
+        df = df[['Name', 'Age Cat', 'Event', 'Points', 'Time']]
         to_concat.append(df)
 
     # MERGE RESULTS
@@ -86,7 +88,7 @@ def download_process_results(events_info):
     df = to_concat[0]
 
     for i in range(l-1):
-        df = df.merge(to_concat[i+1], how='outer', on=['Name', 'Age Category'], suffixes=(f'_{i}', f'_{i+1}'))
+        df = df.merge(to_concat[i+1], how='outer', on=['Name', 'Age Cat'], suffixes=(f'_{i}', f'_{i+1}'))
 
     points_cols = [x for x in df.columns if 'Points' in x]
     time_cols = [x for x in df.columns if 'Time' in x]
@@ -98,7 +100,7 @@ def download_process_results(events_info):
 
     # ADD POSITION RANKS
     df['Pos'] = points_time_rank(df)
-    df['Age/Cat Pos'] = df.groupby('Age Category').apply(points_time_rank).reset_index(level=0)[0]
+    df['Cat Pos'] = df.groupby('Age Cat').apply(points_time_rank).reset_index(level=0)[0]
 
     # REORDER COLUMNS
     cols = df.columns.tolist()
@@ -112,18 +114,18 @@ def download_process_results(events_info):
     df[points_cols] = df[points_cols].apply(lambda x: x.astype(str).replace(r'\..+', '', regex=True).str.lower().str.replace('nan', '', case=False))
     time_cols = [x for x in df.columns if 'Time' in x]
     df[time_cols] = df[time_cols].apply(lambda x: x.astype(str).replace(r'.+\s', '', regex=True).str.lower().str.replace('nat', '', case=False))
-    begin = ['Pos', 'Age/Cat Pos', 'Name', 'Age Category']
+    begin = ['Pos', 'Cat Pos', 'Name', 'Age Cat']
     middle = ['Event', 'Points', 'Time']
     end = ['Total Points', 'Total Time']
     df.columns = begin + len(to_concat)*middle + end
 
     # ADD BOTTOM ROW WITH UPDATED DATE AND TIME
-    df.loc[df.shape[0], 'Name'] = f'Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}'
+    # df.loc[df.shape[0], 'Name'] = f'Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}'
     print('Merged results')
 
     # EXPORT CSV AND HTML FILES
     curr_dir = os.path.dirname(__file__)
-    tmp_dir = '/tmp/'
+    tmp_dir = 'tmp/'
     tmp_path = os.path.join(curr_dir, tmp_dir)
     csv_name = f'{events_html_name}.csv'
     html_name = f'{events_html_name}.html'
@@ -135,45 +137,79 @@ def download_process_results(events_info):
 
     pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
+    table = df.to_html(justify='left', index=False, na_rep='')
+    
+    # style = '.scrollable-table-wrapper {width: 100vh; height: 100vh; overflow-x: auto; overflow-y: auto;}'
+    
     html_string = f'''
     <html>
     <head><title>{events_html_title}</title></head>
-    <link rel="stylesheet" type="text/css" href="df_style.css"/>
     <body>
-        {{table}}
+    <h2>Maprun Results 2024</h2>
+    <div style="white-space:pre;overflow:auto;width:100%;">
+        {table}
+    </div>
+    <p>Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}</p>
     </body>
-    </html>.
+    </html>
     '''
 
     # OUTPUT AN HTML FILE
     with open(html_file, 'w') as f:
-        f.write(html_string.format(table=df.to_html(justify='left', index=False, na_rep='', classes='mystyle')))
+        f.write(html_string)
 
     print('Exported CSV and HTML files')
 
     # UPLOAD
 
-    try:
-        UPLOAD_ADDRESS = os.environ['UPLOAD_ADDRESS']
-        UPLOAD_DIRECTORY = os.environ['UPLOAD_DIRECTORY']
-        UPLOAD_USERNAME = os.environ['UPLOAD_USERNAME']
-        UPLOAD_PASSWORD = os.environ['UPLOAD_PASSWORD']
+    if events_upload_type == 'ftp':
 
-        ftp = FTP(UPLOAD_ADDRESS)
-        ftp.login(UPLOAD_USERNAME, UPLOAD_PASSWORD)
-        ftp.cwd(UPLOAD_DIRECTORY)
+        try:
+            UPLOAD_ADDRESS = os.environ['UPLOAD_ADDRESS']
+            UPLOAD_DIRECTORY = os.environ['UPLOAD_DIRECTORY']
+            UPLOAD_USERNAME = os.environ['UPLOAD_USERNAME']
+            UPLOAD_PASSWORD = os.environ['UPLOAD_PASSWORD']
 
-        for f in [csv_name, html_name]:
-            file = open(f'{tmp_path}{f}','rb')
-            ftp.storbinary('STOR '+f, file)
-            file.close()
+            ftp = FTP(UPLOAD_ADDRESS)
+            ftp.login(UPLOAD_USERNAME, UPLOAD_PASSWORD)
+            ftp.cwd(UPLOAD_DIRECTORY)
 
-        ftp.quit()
+            for f in [csv_name, html_name]:
+                file = open(f'{tmp_path}{f}','rb')
+                ftp.storbinary('STOR '+f, file)
+                file.close()
 
-        print(f'Uploaded files to {UPLOAD_ADDRESS} at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}\n-------------------------')
+            ftp.quit()
 
-    except KeyError:
-        print('Upload details not configured; skipping upload\n-------------------------')
+            print(f'Uploaded files to {UPLOAD_ADDRESS} at {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}\n-------------------------')
+
+        except KeyError:
+            print('Upload details not configured; skipping upload\n-------------------------')
+
+    elif events_upload_type == 'wordpress':
+
+        WORDPRESS_URL = os.environ['WORDPRESS_URL']
+        WORDPRESS_USERNAME = os.environ['WORDPRESS_USERNAME']
+        WORDPRESS_PASSWORD = os.environ['WORDPRESS_PASSWORD']
+
+        credentials = WORDPRESS_USERNAME + ':' + WORDPRESS_PASSWORD
+        token = base64.b64encode(credentials.encode())
+        header = {'Authorization': 'Basic ' + token.decode('utf-8')}
+
+        page_data = {
+            'title': events_html_title,
+            'content': html_string,
+            'status': 'publish'
+        }
+
+        response = requests.post(
+            WORDPRESS_URL,
+            json=page_data,
+            headers=header
+        )
+
+        print(response.status_code)
+        print(response.content)
 
 
 def lambda_handler(event, context):

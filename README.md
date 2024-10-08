@@ -1,21 +1,25 @@
 # maprun-results
 
-This project automatically downloads separate results from multiple [Maprun events](https://maprunners.weebly.com/), then combines points and time scores for each competitor. It then ranks competitors by overall number of points and time taken. The combined results in CSV and HTML format are stored locally, and optionally uploaded to a website. If you run, or take part in, a Maprun series of events such as the [Peak Raid Series](https://explorerevents.co.uk/), this tool can be useful in creating and viewing combined series results.
+This project automatically downloads separate results from multiple [Maprun events](https://maprunners.weebly.com/), then combines points and time scores for each competitor. It then ranks competitors by overall number of points and time taken. The combined results in CSV and HTML format are stored locally, and optionally uploaded to a website using FTP, or to a Wordpress site using  `requests`. If you run, or take part in, a Maprun series of events such as the [Peak Raid Series](https://explorerevents.co.uk/), this tool can be useful in creating and viewing combined series results.
 
 ## Usage
 ### Local
 First, configure `events_info.json`, specifying:
-- `"file"`: json filename containing custom event names and results URLs (see `peak_raid_2023.json` for an example)
+- `"file"`: json filename containing custom event names and results URLs (see `peak_raid_2024.json` for an example)
 - `"html_name"`: name for html and csv files
 - `"html_title"`: html title
+- `"upload_type"`: "wordpress" or "ftp"
 
-Ensure that, together with `events_info.json`, the events file itself (eg `peak_raid_2023.json`) is present in the local directory.
+Ensure that, together with `events_info.json`, the events file itself (eg `peak_raid_2024.json`) is present in the local directory.
 
-Optionally, export the following environment variables to enable FTP upload:
+Optionally, export the following environment variables to enable FTP/Wordpress upload:
 - `UPLOAD_ADDRESS` (eg "ftp.mywebsitehost.com")
 - `UPLOAD_DIRECTORY` (eg "/public_html/maprun-results/")
 - `UPLOAD_USERNAME`
 - `UPLOAD_PASSWORD`
+- `WORDPRESS_URL`
+- `WORDPRESS_USERNAME`
+- `WORDPRESS_PASSWORD`
 
 In bash, this would be achieved using:
 ```
@@ -48,6 +52,4 @@ Finally configure an EventBridge schedule (eg once per hour), that will trigger 
 
 ## Example combined results
 
-The repository is deployed on AWS for regular updates to [Peak Raid series](https://explorerevents.co.uk/) combined results:
-- [HTML](http://qdata.byethost4.com/peakraid/2023.html)
-- [CSV](http://qdata.byethost4.com/peakraid/2023.csv)
+The repository is deployed on AWS for regular updates to [Peak Raid series](https://explorerevents.co.uk/) combined results: [https://explorerevents.co.uk/peak-raid-maprun-2024-results/](https://explorerevents.co.uk/peak-raid-maprun-2024-results/).
