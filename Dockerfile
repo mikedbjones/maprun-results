@@ -1,6 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.9
 
-COPY peak_raid_2024.json ./
+COPY peak_raid_2025.json ./
 COPY requirements.txt ./
 COPY results.py ./
 
