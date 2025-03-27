@@ -123,18 +123,6 @@ def download_process_results(events_info):
     # df.loc[df.shape[0], 'Name'] = f'Latest update at: {get_uk_time_now().strftime("%d/%m/%Y %H:%M:%S %Z")}'
     print('Merged results')
 
-    # EXPORT CSV AND HTML FILES
-    curr_dir = os.path.dirname(__file__)
-    tmp_dir = 'tmp/'
-    tmp_path = os.path.join(curr_dir, tmp_dir)
-    csv_name = f'{events_html_name}.csv'
-    html_name = f'{events_html_name}.html'
-    
-    csv_file = f'{tmp_path}{csv_name}'
-    html_file = f'{tmp_path}{html_name}'
-
-    df.to_csv(csv_file, index=False)
-
     pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
     table = df.to_html(justify='left', index=False, na_rep='')
@@ -145,7 +133,7 @@ def download_process_results(events_info):
     <html>
     <head><title>{events_html_title}</title></head>
     <body>
-    <h2>Maprun Results 2024</h2>
+    <h2>Maprun Results {events_html_name}</h2>
     <div style="white-space:pre;overflow:auto;width:100%;">
         {table}
     </div>
@@ -154,15 +142,27 @@ def download_process_results(events_info):
     </html>
     '''
 
-    # OUTPUT AN HTML FILE
-    with open(html_file, 'w') as f:
-        f.write(html_string)
-
-    print('Exported CSV and HTML files')
-
     # UPLOAD
 
     if events_upload_type == 'ftp':
+
+        # EXPORT CSV AND HTML FILES
+        curr_dir = os.path.dirname(__file__)
+        tmp_dir = 'tmp/'
+        tmp_path = os.path.join(curr_dir, tmp_dir)
+        csv_name = f'{events_html_name}.csv'
+        html_name = f'{events_html_name}.html'
+        
+        csv_file = f'{tmp_path}{csv_name}'
+        html_file = f'{tmp_path}{html_name}'
+
+        df.to_csv(csv_file, index=False)
+
+        # OUTPUT AN HTML FILE
+        with open(html_file, 'w') as f:
+            f.write(html_string)
+
+        print('Exported CSV and HTML files')
 
         try:
             UPLOAD_ADDRESS = os.environ['UPLOAD_ADDRESS']
