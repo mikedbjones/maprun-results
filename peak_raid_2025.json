@@ -1,4 +1,6 @@
 {
-    "Tideswell": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Race%201%20Tideswell%20Dale%20PZ%20PXAS%20ScoreV120.csv",
-    "Flash & Axe Edge": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Race%202%20Flash%20Axe%20Edge%20Moor%20PZ%20PXAS%20ScoreV120.csv"
+    "Tideswell Dale": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Race%201%20Tideswell%20Dale%20PZ%20PXAS%20ScoreV120.csv",
+    "Flash & Axe Edge": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Race%202%20Flash%20Axe%20Edge%20Moor%20PZ%20PXAS%20ScoreV120.csv",
+    "Over Haddon": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Race%203%20Over%20Haddon%20PZ%20PXAS%20ScoreV120.csv",
+    "Ilam & Dove Dale": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Race%204%20Ilam%20Dove%20Dale%20PZ%20PXAS%20ScoreV120.csv"
 }
