@@ -1,5 +1,6 @@
 {
     "Chelmorton": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Peak%20Raid%20R1%20Chelmorton%20PZ%20PXAS%20ScoreV120.csv",
     "Eyam": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Peak%20Raid%20Bretton%20Eyam%20PZ%20PXAS%20ScoreV120.csv",
-    "Bradfield": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Peak%20Raid%20R3%20Low%20Bradfield%20PZ%20PXAS%20ScoreV120.csv"
+    "Bradfield": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Peak%20Raid%20R3%20Low%20Bradfield%20PZ%20PXAS%20ScoreV120.csv",
+    "Hartington": "https://p.fne.com.au/rg/cgi-bin/SelectResultFileForSplitsBrowserFiltered.cgi?act=fileToSplitsBrowser&eventName=ScoreResults_Peak%20Raid%20Hartington%20R4%20PZ%20PXAS%20ScoreV120.csv"
 }
